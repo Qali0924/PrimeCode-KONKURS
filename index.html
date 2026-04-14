@@ -37,6 +37,7 @@
     </div>
 
     <script>
+        // 1. Zabezpieczenia (Blokada prawego przycisku i skrótów)
         document.addEventListener('contextmenu', event => event.preventDefault());
         document.onkeydown = function(e) {
             if(e.keyCode == 123 || 
@@ -46,6 +47,7 @@
             }
         }
 
+        // 2. Licznik
         const targetDate = new Date("2026-04-16T19:00:00").getTime();
         const updateTimer = setInterval(() => {
             const now = new Date().getTime();
@@ -67,6 +69,34 @@
             document.getElementById("minutes").innerText = m.toString().padStart(2, '0');
             document.getElementById("seconds").innerText = s.toString().padStart(2, '0');
         }, 1000);
+        document.getElementById('entryForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const nick = document.getElementById('discordNick').value;
+    
+    const response = await fetch('submit.php', {
+        method: 'POST',
+        body: new URLSearchParams({nick})
+    });
+    const result = await response.json();
+    
+    if(result.status === 'success') {
+        // Zmiana widoku strony
+        document.querySelector('.container').innerHTML = 
+            "<h1>OCZEKUJ NA WYNIKI</h1><p>Twój nick został zapisany.</p>";
+    } else {
+        alert(result.message);
+    }
+});
+// Po upływie czasu (wewnątrz funkcji updateTimer)
+if (distance < 0) {
+    // Pobierz dane z database.json (wymaga skryptu 'get_winners.php')
+    fetch('get_winners.php')
+        .then(res => res.json())
+        .then(winners => {
+            document.querySelector('.container').innerHTML = 
+                `<h1>ZWYCIĘZCY</h1><p>${winners.join(', ')}</p>`;
+        });
+}
     </script>
     <script src="script.js"></script>
 </body>
