@@ -13,7 +13,7 @@
     <canvas id="bg-canvas"></canvas>
     <div class="glow-bg"></div>
 
-    <div class="container">
+    <div class="container" id="mainContainer">
         <header>
             <p class="subtitle">KONKURS DLA SPOLECZNOSCI</p>
             <h1>PRIMECODE</h1>
@@ -27,13 +27,21 @@
             <div class="time-box"><span id="seconds">00</span><span class="label">SEK</span></div>
         </div>
 
-<div id="statusContainer" style="display:none;">
-    <h2 id="statusTitle">Zgłaszanie...</h2>
-    <div class="progress-bar-bg">
-        <div id="progressBar" class="progress-bar-fill"></div>
+        <form id="entryForm">
+            <div class="input-group">
+                <input type="text" id="discordNick" placeholder="Wprowadź swój nick Discord" required autocomplete="off">
+            </div>
+            <button type="submit" id="submitBtn">ZGŁOŚ UDZIAŁ</button>
+        </form>
+
+        <div id="statusContainer" style="display:none;">
+            <h2 id="statusTitle">Zgłaszanie...</h2>
+            <div class="progress-bar-bg">
+                <div id="progressBar" class="progress-bar-fill"></div>
+            </div>
+            <p id="statusStep">Pobieranie danych...</p>
+        </div>
     </div>
-    <p id="statusStep">Pobieranie danych...</p>
-</div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
@@ -53,6 +61,15 @@
         const db = getDatabase(app);
         const targetDate = new Date("2026-04-16T19:00:00").getTime();
 
+        // Zabezpieczenie przy ładowaniu strony
+        window.addEventListener('load', () => {
+            if (localStorage.getItem('alreadyRegistered')) {
+                document.getElementById('entryForm').style.display = 'none';
+                document.getElementById('statusContainer').style.display = 'block';
+                document.getElementById('statusContainer').innerHTML = "<h1>ZAPISANO</h1><p class='prize-info'>JESTEŚ JUŻ NA LIŚCIE. OCZEKUJ NA WYNIKI.</p>";
+            }
+        });
+
         // 1. Licznik
         const timer = setInterval(() => {
             const now = new Date().getTime();
@@ -69,58 +86,36 @@
         }, 1000);
 
         // 2. Zapisywanie z profesjonalnym loaderem
-document.getElementById('entryForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    if (localStorage.getItem('alreadyRegistered')) return;
+        document.getElementById('entryForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const entryForm = document.getElementById('entryForm');
+            const statusContainer = document.getElementById('statusContainer');
+            const progressBar = document.getElementById('progressBar');
+            const statusStep = document.getElementById('statusStep');
 
-    const entryForm = document.getElementById('entryForm');
-    const statusContainer = document.getElementById('statusContainer');
-    const progressBar = document.getElementById('progressBar');
-    const statusStep = document.getElementById('statusStep');
+            entryForm.style.display = 'none';
+            statusContainer.style.display = 'block';
 
-    // Ukryj formularz, pokaż loader
-    entryForm.style.display = 'none';
-    statusContainer.style.display = 'block';
+            const steps = ["Inicjalizacja...", "Pobieranie nicku...", "Zapisywanie w bazie...", "Dołączanie do konkursu..."];
+            for (let i = 0; i < steps.length; i++) {
+                statusStep.innerText = steps[i];
+                progressBar.style.width = ((i + 1) * 25) + "%";
+                await new Promise(r => setTimeout(r, 600));
+            }
 
-    const steps = ["Inicjalizacja...", "Pobieranie nicku...", "Zapisywanie w bazie...", "Dołączanie do konkursu..."];
-    
-    for (let i = 0; i < steps.length; i++) {
-        statusStep.innerText = steps[i];
-        progressBar.style.width = ((i + 1) * 25) + "%";
-        await new Promise(r => setTimeout(r, 800)); // Czas każdego kroku
-    }
+            const nick = document.getElementById('discordNick').value;
+            push(ref(db, 'users/'), { nick: nick, timestamp: Date.now() }).then(() => {
+                localStorage.setItem('alreadyRegistered', 'true');
+                statusContainer.innerHTML = "<h1>ZAPISANO</h1><p class='prize-info'>OCZEKUJ NA WYNIKI</p>";
+            });
+        });
 
-    const nick = document.getElementById('discordNick').value;
-    push(ref(db, 'users/'), { nick: nick, timestamp: Date.now() }).then(() => {
-        localStorage.setItem('alreadyRegistered', 'true');
-        // Pokaż ekran końcowy z licznikami
-        statusContainer.innerHTML = `
-            <h1>ZAPISANO</h1>
-            <p class='prize-info'>OCZEKUJ NA WYNIKI</p>
-            <div id="countdown-small">
-                <p>Do losowania pozostało:</p>
-                <span id="finalDays">00</span>DNI <span id="finalHours">00</span>GODZ
-            </div>
-        `;
-        startMiniCountdown();
-    });
-});
-
-function startMiniCountdown() {
-    setInterval(() => {
-        const dist = targetDate - Date.now();
-        document.getElementById("finalDays").innerText = Math.floor(dist / (1000 * 60 * 60 * 24));
-        document.getElementById("finalHours").innerText = Math.floor((dist % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    }, 1000);
-}
-
-        // 3. Sprawdzanie zwycięzców
         function checkWinners() {
             get(ref(db, 'users/')).then((snapshot) => {
                 if (snapshot.exists()) {
                     const data = Object.values(snapshot.val());
                     const winners = data.sort(() => 0.5 - Math.random()).slice(0, 3).map(u => u.nick);
-                    document.querySelector('.container').innerHTML = `<h1>ZWYCIĘZCY</h1><p>${winners.join(', ')}</p>`;
+                    document.getElementById('mainContainer').innerHTML = `<h1>ZWYCIĘZCY</h1><p>${winners.join(', ')}</p>`;
                 }
             });
         }
