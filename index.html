@@ -36,82 +36,51 @@
         </form>
     </div>
 
- <script>
-        // 1. Zabezpieczenia
-        document.addEventListener('contextmenu', event => event.preventDefault());
-        document.onkeydown = function(e) {
-            if(e.keyCode == 123 || 
-               (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 67 || e.keyCode == 74)) || 
-               (e.ctrlKey && e.keyCode == 85)) {
-                return false;
-            }
-        }
+ <script type="module">
+    // Importuj funkcje Firebase
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+    import { getDatabase, ref, push, get } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
 
-        // 2. Funkcja sprawdzająca status konkursu
-        function checkCompetitionStatus() {
-            const now = new Date().getTime();
-            const targetDate = new Date("2026-04-16T19:00:00").getTime();
-            
-            if (now >= targetDate) {
-                // Konkurs zakończony - pobierz zwycięzców
-                fetch('get_winners.php')
-                    .then(res => res.json())
-                    .then(winners => {
-                        document.querySelector('.container').innerHTML = 
-                            `<h1>ZWYCIĘZCY</h1><p style="font-size: 1.2rem; color: #bf80ff;">${winners.join(', ')}</p>`;
-                    })
-                    .catch(() => {
-                        document.querySelector('.container').innerHTML = "<h1>KONKURS ZAKOŃCZONY</h1>";
-                    });
-                return true;
-            }
-            return false;
-        }
+    const firebaseConfig = {
+        apiKey: "AIzaSyAqNRQ_69RR8QF-n8uUAuJrZtbHAEoH7KY",
+        authDomain: "primecode-konkurs.firebaseapp.com",
+        databaseURL: "https://primecode-konkurs-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "primecode-konkurs",
+        storageBucket: "primecode-konkurs.firebasestorage.app",
+        messagingSenderId: "425917535443",
+        appId: "1:425917535443:web:b77ac0dcad2807b8b67026"
+    };
 
-        // Uruchom sprawdzenie od razu przy wejściu na stronę
-        if (!checkCompetitionStatus()) {
-            // Jeśli konkurs trwa, odpal licznik
-            const updateTimer = setInterval(() => {
-                if (checkCompetitionStatus()) {
-                    clearInterval(updateTimer);
-                    return;
-                }
-                
-                const now = new Date().getTime();
-                const targetDate = new Date("2026-04-16T19:00:00").getTime();
-                const distance = targetDate - now;
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
 
-                const d = Math.floor(distance / (1000 * 60 * 60 * 24));
-                const h = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                const m = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-                const s = Math.floor((distance % (1000 * 60)) / 1000);
+    // Wysyłanie zgłoszenia
+    document.getElementById('entryForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const nick = document.getElementById('discordNick').value;
+        
+        push(ref(db, 'users/'), {
+            nick: nick,
+            timestamp: Date.now()
+        }).then(() => {
+            document.querySelector('.container').innerHTML = 
+                "<h1>ZAPISANO</h1><p class='prize-info'>OCZEKUJ NA WYNIKI</p>";
+        });
+    });
 
-                document.getElementById("days").innerText = d.toString().padStart(2, '0');
-                document.getElementById("hours").innerText = h.toString().padStart(2, '0');
-                document.getElementById("minutes").innerText = m.toString().padStart(2, '0');
-                document.getElementById("seconds").innerText = s.toString().padStart(2, '0');
-            }, 1000);
-        }
-
-        // 3. Logika wysyłania formularza
-        document.getElementById('entryForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const nick = document.getElementById('discordNick').value;
-            
-            const response = await fetch('submit.php', {
-                method: 'POST',
-                body: new URLSearchParams({nick})
-            });
-            const result = await response.json();
-            
-            if(result.status === 'success') {
+    // Sprawdzanie zwycięzców
+    const targetDate = new Date("2026-04-16T19:00:00").getTime();
+    if (Date.now() >= targetDate) {
+        get(ref(db, 'users/')).then((snapshot) => {
+            if (snapshot.exists()) {
+                const data = Object.values(snapshot.val());
+                const winners = data.sort(() => 0.5 - Math.random()).slice(0, 3).map(u => u.nick);
                 document.querySelector('.container').innerHTML = 
-                    "<h1>ZAPISANO</h1><p class='prize-info'>OCZEKUJ NA WYNIKI 16.04.2026</p>";
-            } else {
-                alert(result.message || "Wystąpił błąd.");
+                    `<h1>ZWYCIĘZCY</h1><p>${winners.join(', ')}</p>`;
             }
         });
-    </script>
+    }
+</script>
     <script src="script.js"></script>
 </body>
 </html>
