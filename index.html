@@ -37,7 +37,6 @@
     </div>
 
     <script>
-        // 1. Zabezpieczenia (Blokada prawego przycisku i skrótów)
         document.addEventListener('contextmenu', event => event.preventDefault());
         document.onkeydown = function(e) {
             if(e.keyCode == 123 || 
@@ -47,7 +46,6 @@
             }
         }
 
-        // 2. Licznik
         const targetDate = new Date("2026-04-16T19:00:00").getTime();
         const updateTimer = setInterval(() => {
             const now = new Date().getTime();
