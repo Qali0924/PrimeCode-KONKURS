@@ -39,15 +39,15 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
         import { getDatabase, ref, push, get } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyAqNRQ_69RR8QF-n8uUAuJrZtbHAEoH7KY",
-            authDomain: "primecode-konkurs.firebaseapp.com",
-            databaseURL: "https://primecode-konkurs-default-rtdb.europe-west1.firebasedatabase.app",
-            projectId: "primecode-konkurs",
-            storageBucket: "primecode-konkurs.firebasestorage.app",
-            messagingSenderId: "425917535443",
-            appId: "1:425917535443:web:b77ac0dcad2807b8b67026"
-        };
+const firebaseConfig = {
+    apiKey: "AIzaSyAqNRQ_69RR8QF-n8uUAuJrZtbHAEoH7KY",
+    authDomain: "primecode-konkurs.firebaseapp.com",
+    databaseURL: "https://primecode-konkurs-default-rtdb.firebaseio.com", // TO MUSI BYĆ TO
+    projectId: "primecode-konkurs",
+    storageBucket: "primecode-konkurs.firebasestorage.app",
+    messagingSenderId: "425917535443",
+    appId: "1:425917535443:web:b77ac0dcad2807b8b67026"
+};
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
