@@ -1,4 +1,4 @@
-// --- 1. Animacja tła (Cząsteczki) ---
+
 const canvas = document.getElementById('bg-canvas');
 const ctx = canvas.getContext('2d');
 
@@ -51,7 +51,7 @@ function animate() {
     requestAnimationFrame(animate);
 }
 
-// --- 2. Customowy Kursor (Księżyc) ---
+
 const cursorMoon = document.querySelector('.cursor-moon');
 
 document.addEventListener('mousemove', (e) => {
@@ -66,7 +66,7 @@ document.addEventListener('mousedown', () => cursorMoon.classList.add('active'))
 document.addEventListener('mouseup', () => cursorMoon.classList.remove('active'));
 document.addEventListener('mouseleave', () => cursorMoon.style.opacity = '0');
 
-// --- Uruchomienie ---
+
 init();
 animate();
 
