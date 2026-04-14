@@ -36,8 +36,8 @@
         </form>
     </div>
 
-    <script>
-        // 1. Zabezpieczenia (Blokada prawego przycisku i skrótów)
+ <script>
+        // 1. Zabezpieczenia
         document.addEventListener('contextmenu', event => event.preventDefault());
         document.onkeydown = function(e) {
             if(e.keyCode == 123 || 
@@ -47,56 +47,70 @@
             }
         }
 
-        // 2. Licznik
-        const targetDate = new Date("2026-04-16T19:00:00").getTime();
-        const updateTimer = setInterval(() => {
+        // 2. Funkcja sprawdzająca status konkursu
+        function checkCompetitionStatus() {
             const now = new Date().getTime();
-            const distance = targetDate - now;
-
-            if (distance < 0) {
-                clearInterval(updateTimer);
-                document.getElementById("countdown").innerHTML = "<div class='time-box'><span class='label'>KONKURS ZAKOŃCZONY</span></div>";
-                return;
+            const targetDate = new Date("2026-04-16T19:00:00").getTime();
+            
+            if (now >= targetDate) {
+                // Konkurs zakończony - pobierz zwycięzców
+                fetch('get_winners.php')
+                    .then(res => res.json())
+                    .then(winners => {
+                        document.querySelector('.container').innerHTML = 
+                            `<h1>ZWYCIĘZCY</h1><p style="font-size: 1.2rem; color: #bf80ff;">${winners.join(', ')}</p>`;
+                    })
+                    .catch(() => {
+                        document.querySelector('.container').innerHTML = "<h1>KONKURS ZAKOŃCZONY</h1>";
+                    });
+                return true;
             }
+            return false;
+        }
 
-            const d = Math.floor(distance / (1000 * 60 * 60 * 24));
-            const h = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const m = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-            const s = Math.floor((distance % (1000 * 60)) / 1000);
+        // Uruchom sprawdzenie od razu przy wejściu na stronę
+        if (!checkCompetitionStatus()) {
+            // Jeśli konkurs trwa, odpal licznik
+            const updateTimer = setInterval(() => {
+                if (checkCompetitionStatus()) {
+                    clearInterval(updateTimer);
+                    return;
+                }
+                
+                const now = new Date().getTime();
+                const targetDate = new Date("2026-04-16T19:00:00").getTime();
+                const distance = targetDate - now;
 
-            document.getElementById("days").innerText = d.toString().padStart(2, '0');
-            document.getElementById("hours").innerText = h.toString().padStart(2, '0');
-            document.getElementById("minutes").innerText = m.toString().padStart(2, '0');
-            document.getElementById("seconds").innerText = s.toString().padStart(2, '0');
-        }, 1000);
+                const d = Math.floor(distance / (1000 * 60 * 60 * 24));
+                const h = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const m = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const s = Math.floor((distance % (1000 * 60)) / 1000);
+
+                document.getElementById("days").innerText = d.toString().padStart(2, '0');
+                document.getElementById("hours").innerText = h.toString().padStart(2, '0');
+                document.getElementById("minutes").innerText = m.toString().padStart(2, '0');
+                document.getElementById("seconds").innerText = s.toString().padStart(2, '0');
+            }, 1000);
+        }
+
+        // 3. Logika wysyłania formularza
         document.getElementById('entryForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const nick = document.getElementById('discordNick').value;
-    
-    const response = await fetch('submit.php', {
-        method: 'POST',
-        body: new URLSearchParams({nick})
-    });
-    const result = await response.json();
-    
-    if(result.status === 'success') {
-        // Zmiana widoku strony
-        document.querySelector('.container').innerHTML = 
-            "<h1>OCZEKUJ NA WYNIKI</h1><p>Twój nick został zapisany.</p>";
-    } else {
-        alert(result.message);
-    }
-});
-// Po upływie czasu (wewnątrz funkcji updateTimer)
-if (distance < 0) {
-    // Pobierz dane z database.json (wymaga skryptu 'get_winners.php')
-    fetch('get_winners.php')
-        .then(res => res.json())
-        .then(winners => {
-            document.querySelector('.container').innerHTML = 
-                `<h1>ZWYCIĘZCY</h1><p>${winners.join(', ')}</p>`;
+            e.preventDefault();
+            const nick = document.getElementById('discordNick').value;
+            
+            const response = await fetch('submit.php', {
+                method: 'POST',
+                body: new URLSearchParams({nick})
+            });
+            const result = await response.json();
+            
+            if(result.status === 'success') {
+                document.querySelector('.container').innerHTML = 
+                    "<h1>ZAPISANO</h1><p class='prize-info'>OCZEKUJ NA WYNIKI 16.04.2026</p>";
+            } else {
+                alert(result.message || "Wystąpił błąd.");
+            }
         });
-}
     </script>
     <script src="script.js"></script>
 </body>
