@@ -10,7 +10,6 @@
 <body>
 
     <div class="cursor-moon"></div>
-
     <canvas id="bg-canvas"></canvas>
     <div class="glow-bg"></div>
 
@@ -32,55 +31,64 @@
             <div class="input-group">
                 <input type="text" id="discordNick" placeholder="Wprowadź swój nick Discord" required autocomplete="off">
             </div>
-            <button type="submit">ZGŁOŚ UDZIAŁ</button>
+            <button type="submit" id="submitBtn">ZGŁOŚ UDZIAŁ</button>
         </form>
     </div>
 
- <script type="module">
-    // Importuj funkcje Firebase
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-    import { getDatabase, ref, push, get } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+        import { getDatabase, ref, push, get } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
 
-    const firebaseConfig = {
-        apiKey: "AIzaSyAqNRQ_69RR8QF-n8uUAuJrZtbHAEoH7KY",
-        authDomain: "primecode-konkurs.firebaseapp.com",
-        databaseURL: "https://primecode-konkurs-default-rtdb.europe-west1.firebasedatabase.app",
-        projectId: "primecode-konkurs",
-        storageBucket: "primecode-konkurs.firebasestorage.app",
-        messagingSenderId: "425917535443",
-        appId: "1:425917535443:web:b77ac0dcad2807b8b67026"
-    };
+        const firebaseConfig = {
+            apiKey: "AIzaSyAqNRQ_69RR8QF-n8uUAuJrZtbHAEoH7KY",
+            authDomain: "primecode-konkurs.firebaseapp.com",
+            databaseURL: "https://primecode-konkurs-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "primecode-konkurs",
+            storageBucket: "primecode-konkurs.firebasestorage.app",
+            messagingSenderId: "425917535443",
+            appId: "1:425917535443:web:b77ac0dcad2807b8b67026"
+        };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const targetDate = new Date("2026-04-16T19:00:00").getTime();
 
-    // Wysyłanie zgłoszenia
-    document.getElementById('entryForm').addEventListener('submit', (e) => {
-        e.preventDefault();
-        const nick = document.getElementById('discordNick').value;
-        
-        push(ref(db, 'users/'), {
-            nick: nick,
-            timestamp: Date.now()
-        }).then(() => {
-            document.querySelector('.container').innerHTML = 
-                "<h1>ZAPISANO</h1><p class='prize-info'>OCZEKUJ NA WYNIKI</p>";
-        });
-    });
-
-    // Sprawdzanie zwycięzców
-    const targetDate = new Date("2026-04-16T19:00:00").getTime();
-    if (Date.now() >= targetDate) {
-        get(ref(db, 'users/')).then((snapshot) => {
-            if (snapshot.exists()) {
-                const data = Object.values(snapshot.val());
-                const winners = data.sort(() => 0.5 - Math.random()).slice(0, 3).map(u => u.nick);
-                document.querySelector('.container').innerHTML = 
-                    `<h1>ZWYCIĘZCY</h1><p>${winners.join(', ')}</p>`;
+        // 1. Licznik
+        const timer = setInterval(() => {
+            const now = new Date().getTime();
+            const distance = targetDate - now;
+            if (distance < 0) {
+                clearInterval(timer);
+                checkWinners();
+                return;
             }
+            document.getElementById("days").innerText = Math.floor(distance / (1000 * 60 * 60 * 24)).toString().padStart(2, '0');
+            document.getElementById("hours").innerText = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)).toString().padStart(2, '0');
+            document.getElementById("minutes").innerText = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
+            document.getElementById("seconds").innerText = Math.floor((distance % (1000 * 60)) / 1000).toString().padStart(2, '0');
+        }, 1000);
+
+        // 2. Zapisywanie
+        document.getElementById('entryForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const nick = document.getElementById('discordNick').value;
+            push(ref(db, 'users/'), { nick: nick, timestamp: Date.now() }).then(() => {
+                document.querySelector('.container').innerHTML = "<h1>ZAPISANO</h1><p class='prize-info'>OCZEKUJ NA WYNIKI</p>";
+            });
         });
-    }
-</script>
+
+        // 3. Sprawdzanie zwycięzców
+        function checkWinners() {
+            get(ref(db, 'users/')).then((snapshot) => {
+                if (snapshot.exists()) {
+                    const data = Object.values(snapshot.val());
+                    const winners = data.sort(() => 0.5 - Math.random()).slice(0, 3).map(u => u.nick);
+                    document.querySelector('.container').innerHTML = `<h1>ZWYCIĘZCY</h1><p>${winners.join(', ')}</p>`;
+                }
+            });
+        }
+        if (Date.now() >= targetDate) checkWinners();
+    </script>
     <script src="script.js"></script>
 </body>
 </html>
