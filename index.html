@@ -27,13 +27,13 @@
             <div class="time-box"><span id="seconds">00</span><span class="label">SEK</span></div>
         </div>
 
-        <form id="entryForm">
-            <div class="input-group">
-                <input type="text" id="discordNick" placeholder="Wprowadź swój nick Discord" required autocomplete="off">
-            </div>
-            <button type="submit" id="submitBtn">ZGŁOŚ UDZIAŁ</button>
-        </form>
+<div id="statusContainer" style="display:none;">
+    <h2 id="statusTitle">Zgłaszanie...</h2>
+    <div class="progress-bar-bg">
+        <div id="progressBar" class="progress-bar-fill"></div>
     </div>
+    <p id="statusStep">Pobieranie danych...</p>
+</div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
@@ -68,14 +68,51 @@
             document.getElementById("seconds").innerText = Math.floor((distance % (1000 * 60)) / 1000).toString().padStart(2, '0');
         }, 1000);
 
-        // 2. Zapisywanie
-        document.getElementById('entryForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            const nick = document.getElementById('discordNick').value;
-            push(ref(db, 'users/'), { nick: nick, timestamp: Date.now() }).then(() => {
-                document.querySelector('.container').innerHTML = "<h1>ZAPISANO</h1><p class='prize-info'>OCZEKUJ NA WYNIKI</p>";
-            });
-        });
+        // 2. Zapisywanie z profesjonalnym loaderem
+document.getElementById('entryForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (localStorage.getItem('alreadyRegistered')) return;
+
+    const entryForm = document.getElementById('entryForm');
+    const statusContainer = document.getElementById('statusContainer');
+    const progressBar = document.getElementById('progressBar');
+    const statusStep = document.getElementById('statusStep');
+
+    // Ukryj formularz, pokaż loader
+    entryForm.style.display = 'none';
+    statusContainer.style.display = 'block';
+
+    const steps = ["Inicjalizacja...", "Pobieranie nicku...", "Zapisywanie w bazie...", "Dołączanie do konkursu..."];
+    
+    for (let i = 0; i < steps.length; i++) {
+        statusStep.innerText = steps[i];
+        progressBar.style.width = ((i + 1) * 25) + "%";
+        await new Promise(r => setTimeout(r, 800)); // Czas każdego kroku
+    }
+
+    const nick = document.getElementById('discordNick').value;
+    push(ref(db, 'users/'), { nick: nick, timestamp: Date.now() }).then(() => {
+        localStorage.setItem('alreadyRegistered', 'true');
+        // Pokaż ekran końcowy z licznikami
+        statusContainer.innerHTML = `
+            <h1>ZAPISANO</h1>
+            <p class='prize-info'>OCZEKUJ NA WYNIKI</p>
+            <div id="countdown-small">
+                <p>Do losowania pozostało:</p>
+                <span id="finalDays">00</span>DNI <span id="finalHours">00</span>GODZ
+            </div>
+        `;
+        startMiniCountdown();
+    });
+});
+
+function startMiniCountdown() {
+    setInterval(() => {
+        const dist = targetDate - Date.now();
+        document.getElementById("finalDays").innerText = Math.floor(dist / (1000 * 60 * 60 * 24));
+        document.getElementById("finalHours").innerText = Math.floor((dist % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    }, 1000);
+}
 
         // 3. Sprawdzanie zwycięzców
         function checkWinners() {
