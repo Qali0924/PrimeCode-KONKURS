@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PrimeCode | Konkurs</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@200;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="cursor-moon"></div>
+
+    <canvas id="bg-canvas"></canvas>
+    <div class="glow-bg"></div>
+
+    <div class="container">
+        <header>
+            <p class="subtitle">KONKURS DLA SPOLECZNOSCI</p>
+            <h1>PRIMECODE</h1>
+            <p class="prize-info">3 x 10 PLN NA DEVSTORE + DARMOWY PLUGIN</p>
+        </header>
+
+        <div id="countdown">
+            <div class="time-box"><span id="days">00</span><span class="label">DNI</span></div>
+            <div class="time-box"><span id="hours">00</span><span class="label">GODZ</span></div>
+            <div class="time-box"><span id="minutes">00</span><span class="label">MIN</span></div>
+            <div class="time-box"><span id="seconds">00</span><span class="label">SEK</span></div>
+        </div>
+
+        <form id="entryForm">
+            <div class="input-group">
+                <input type="text" id="discordNick" placeholder="Wprowadź swój nick Discord" required autocomplete="off">
+            </div>
+            <button type="submit">ZGŁOŚ UDZIAŁ</button>
+        </form>
+    </div>
+
+    <script>
+        // 1. Zabezpieczenia (Blokada prawego przycisku i skrótów)
+        document.addEventListener('contextmenu', event => event.preventDefault());
+        document.onkeydown = function(e) {
+            if(e.keyCode == 123 || 
+               (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 67 || e.keyCode == 74)) || 
+               (e.ctrlKey && e.keyCode == 85)) {
+                return false;
+            }
+        }
+
+        // 2. Licznik
+        const targetDate = new Date("2026-04-16T19:00:00").getTime();
+        const updateTimer = setInterval(() => {
+            const now = new Date().getTime();
+            const distance = targetDate - now;
+
+            if (distance < 0) {
+                clearInterval(updateTimer);
+                document.getElementById("countdown").innerHTML = "<div class='time-box'><span class='label'>KONKURS ZAKOŃCZONY</span></div>";
+                return;
+            }
+
+            const d = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const h = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const m = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const s = Math.floor((distance % (1000 * 60)) / 1000);
+
+            document.getElementById("days").innerText = d.toString().padStart(2, '0');
+            document.getElementById("hours").innerText = h.toString().padStart(2, '0');
+            document.getElementById("minutes").innerText = m.toString().padStart(2, '0');
+            document.getElementById("seconds").innerText = s.toString().padStart(2, '0');
+        }, 1000);
+    </script>
+    <script src="script.js"></script>
+</body>
+</html>
